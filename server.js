@@ -14,22 +14,33 @@ io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
 
     // Send existing messages to the newly connected client
-    socket.emit("initialMessages", messages);
+    // socket.emit("initialMessages", messages);
 
     // Listen for new messages from clients
-    socket.on("newMessage", (msg) => {
-        const message = { id: socket.id, text: msg };
-        messages.push(message);
-        io.emit("messageBroadcast", message); // Broadcast the new message to all clients
-    });
+    // socket.on("newMessage", (msg) => {
+    //     const message = { id: socket.id, text: msg };
+    //     messages.push(message);
+    //     io.emit("messageBroadcast", message); // Broadcast the new message to all clients
+    // });
 
     // socket.on("clearMessages", () => {
     //     messages = [];
     //     io.emit("messagesCleared"); // Notify all clients that messages have been cleared
     // });
 
-    socket.on('latestMessages', () => {
-        socket.emit('latestMessagesResponse', messages);
+    socket.on("postMessage", (msg) => {
+        const message = { id: socket.id, text: msg, time: Date.now() };
+        console.log("postMessage:", msg, message);
+        // messages.push(message);
+        messages = [message]
+    });
+
+    socket.on('latestMessages', (data) => {
+        // data: {after: timestamp}
+        const after = data?.after || 0;
+        const filteredMessages = messages.filter(msg => msg.time > after);
+        console.log("latestMessagesResponse:", filteredMessages);
+        socket.emit('latestMessagesResponse', filteredMessages);
     });
 
     socket.on("disconnect", () => {
