@@ -7,6 +7,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: '*' }
 });
+const DiffMatchPath = require("diff-match-patch");
+const dmp = new DiffMatchPath(); 
 
 let messages = [];
 
@@ -28,11 +30,19 @@ io.on("connection", (socket) => {
     //     io.emit("messagesCleared"); // Notify all clients that messages have been cleared
     // });
 
-    socket.on("postMessage", (msg) => {
-        const message = { id: socket.id, text: msg, time: Date.now() };
-        console.log("postMessage:", msg, message);
-        // messages.push(message);
-        messages = [message]
+    // socket.on("postMessage", (msg) => {
+    //     const message = { id: socket.id, text: msg, time: Date.now() };
+    //     console.log("postMessage:", msg, message);
+    //     // messages.push(message);
+    //     messages = [message]
+    // });
+
+    socket.on("patchMessage", (pathText) => {
+       const path = dmp.patch_fromText(pathText);
+       const [newText, _ ] = dmp.patch_apply(path, messages.length > 0 ? messages[messages.length - 1].text : "");
+       const message = { id: socket.id, text: newText, time: Date.now() };
+       console.log("patchMessage:", pathText, message);
+       messages.push(message);
     });
 
     socket.on('latestMessages', (data) => {
