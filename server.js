@@ -11,6 +11,7 @@ const DiffMatchPath = require("diff-match-patch");
 const dmp = new DiffMatchPath(); 
 
 let messages = [];
+let files = [];
 
 io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
@@ -41,7 +42,6 @@ io.on("connection", (socket) => {
        const path = dmp.patch_fromText(pathText);
        const [newText, _ ] = dmp.patch_apply(path, messages.length > 0 ? messages[messages.length - 1].text : "");
        const message = { id: socket.id, text: newText, time: Date.now() };
-       console.log("patchMessage:", pathText, message);
        messages.push(message);
     });
 
@@ -49,16 +49,32 @@ io.on("connection", (socket) => {
         // data: {after: timestamp}
         const after = data?.after || 0;
         const filteredMessages = messages.filter(msg => msg.time > after);
-        console.log("latestMessagesResponse:", filteredMessages);
         socket.emit('latestMessagesResponse', filteredMessages);
     });
 
+    socket.on("postFile", (fileData) => {
+        const fileMsg = {
+            id: socket.id,
+            name: fileData.name,
+            mime: fileData.type,
+            size: fileData.size,
+            content: fileData.content,
+            time: Date.now()
+        };
+        files.push(fileMsg);
+    });
+
+    socket.on("latestFiles", (data) => {
+        const after = data?.after || 0;
+        const filteredFiles = files.filter(file => file.time > after);
+        socket.emit("latestFilesResponse", filteredFiles);
+    });
+
     socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
         const connectedCount = io.engine.clientsCount;
         if (connectedCount === 0) {
-            console.log("All users disconnected. Messages cleared.");
             messages = [];
+            files = [];
         }
     });
 });
