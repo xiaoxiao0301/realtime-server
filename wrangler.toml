@@ -5,10 +5,8 @@ compatibility_date = "2023-12-01"
 [vars]
 ENVIRONMENT = "production"
 
-[[durable_objects.bindings]]
-name = "CHAT_ROOM"
-class_name = "ChatRoom"
+# No Durable Objects needed for simplified deployment.
+# (State is ephemeral per isolate.)
 
-# Enable WebSocket support
 [build]
 command = ""
